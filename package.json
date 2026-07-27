@@ -1,0 +1,30 @@
+{
+  "name": "movie-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js"
+  },
+  "keywords": [],
+  "author": "ratnadip",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.9.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "handlebars": "^4.7.9",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.1.5",
+    "mongoose-aggregate-paginate-v2": "^1.1.4",
+    "multer": "^2.1.0",
+    "nodemailer": "^8.0.5",
+    "nodemon": "^3.1.11",
+    "prettier": "^3.8.1"
+  }
+}
