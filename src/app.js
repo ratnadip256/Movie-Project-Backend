@@ -31,9 +31,10 @@ app.use(cookieParser());
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Movie Backend API is running",
+    message: "Movie Backend API is running"
   });
 });
+
 
 // define main route link of user section.
 app.use("/api/v1/users", userRouter)
