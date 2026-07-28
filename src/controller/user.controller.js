@@ -1,4 +1,4 @@
-import { asyncErrorHandler  } from "../utils/asyncErrorHandler.js";
+import { asyncErrorHandler } from "../utils/asyncErrorHandler.js";
 import { apiError } from "../utils/apiError.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
@@ -35,7 +35,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 
 
 
-export const registerUser = asyncErrorHandler (async (req, res) => {
+export const registerUser = asyncErrorHandler(async (req, res) => {
   const { fullname, username, email, password } = req.body;
 
   if (
@@ -95,26 +95,26 @@ export const registerUser = asyncErrorHandler (async (req, res) => {
 
 
 
-return res
-  .status(201)
-  .json({
-    message: "Register Successfully",
-    data: { user: createdUser }
-  });
+  return res
+    .status(201)
+    .json({
+      message: "Register Successfully",
+      data: { user: createdUser }
+    });
 
 });
 
 
-export const loginUser = asyncErrorHandler (async (req, res) => {
+export const loginUser = asyncErrorHandler(async (req, res) => {
 
-  const { email, username, password} = req.body;
+  const { email, username, password } = req.body;
 
   if (!email && !username) {
-  throw new apiError(400, "Email or Username is required");
+    throw new apiError(400, "Email or Username is required");
   }
 
   if (!password) {
-  throw new apiError(400, "Password is required");
+    throw new apiError(400, "Password is required");
   }
 
   const conditions = [];
@@ -122,8 +122,8 @@ export const loginUser = asyncErrorHandler (async (req, res) => {
   if (email) conditions.push({ email });
 
   const user = await User.findOne({ $or: conditions });
-  
-  if(!user) {
+
+  if (!user) {
     throw new apiError(404, "User not exist!");
   }
 
@@ -136,7 +136,7 @@ export const loginUser = asyncErrorHandler (async (req, res) => {
   }
 
   const isPasswordMatch = await user.isPasswordCorrect(password);
-  if(!isPasswordMatch) {
+  if (!isPasswordMatch) {
     user.loginAttempts += 1;
     if (user.loginAttempts >= 5) {
       user.loginBlockedUntil = Date.now() + 5 * 60 * 1000;
@@ -160,38 +160,38 @@ export const loginUser = asyncErrorHandler (async (req, res) => {
 
   // when user has already attempting otp 5 times then block the user for 2 min...user in that time cannot send otp request means resend otp
   if (user.otpBlockedUntil && user.otpBlockedUntil > Date.now()) {
-  return res.status(429).json({
-    success: false,
-    message: "Too many attempts. Try again after 2 minutes."
-  });
-}
+    return res.status(429).json({
+      success: false,
+      message: "Too many attempts. Try again after 2 minutes."
+    });
+  }
 
 
   //otp create and save in db.
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   user.otp = otp;
   user.otpExpiry = Date.now() + 60 * 1000; //60s
-  await user.save({ validateBeforeSave: false});
+  await user.save({ validateBeforeSave: false });
 
   //send the otp to user
   await emailSend(otp, user.email);
 
   return res.status(200).json({
-  success: true,
-  message: "Login OTP sent successfully."
-});
+    success: true,
+    message: "Login OTP sent successfully."
+  });
 
 })
 
 
-export const verifyOtp = asyncErrorHandler (async (req, res) => {
+export const verifyOtp = asyncErrorHandler(async (req, res) => {
   const { email, username, otp } = req.body;
 
   if (!email && !username) {
-  throw new apiError(400, "Email or Username is required");
+    throw new apiError(400, "Email or Username is required");
   }
 
-  if(!otp) {
+  if (!otp) {
     throw new apiError(400, "Otp is required.")
   }
 
@@ -204,8 +204,8 @@ export const verifyOtp = asyncErrorHandler (async (req, res) => {
   if (!user) {
     throw new apiError(404, "User not found");
   }
-  
- 
+
+
   if (user.otpBlockedUntil && user.otpBlockedUntil > Date.now()) {
     return res.status(429).json({
       success: false,
@@ -261,11 +261,11 @@ export const verifyOtp = asyncErrorHandler (async (req, res) => {
 
   return res
     .status(200)
-    .cookie("accessToken", accessToken, { httpOnly: true , secure: true })
-    .cookie("refreshToken", refreshToken, { httpOnly: true, secure: true })
+    .cookie("accessToken", accessToken, { httpOnly: true, secure: true, sameSite: "none" })
+    .cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "none" })
     .json({
       success: true,
-      message: `${ user.fullname }, you are successfully LoggedIn!`,
+      message: `${user.fullname}, you are successfully LoggedIn!`,
     });
 
 
@@ -474,8 +474,8 @@ export const refreshAccessToken = asyncErrorHandler(async (req, res) => {
 
   return res
     .status(200)
-    .cookie("accessToken", accessToken, { httpOnly: true, secure: true })
-    .cookie("refreshToken", refreshToken, { httpOnly: true, secure: true })
+    .cookie("accessToken", accessToken, { httpOnly: true, secure: true, sameSite: "none" })
+    .cookie("refreshToken", refreshToken, { httpOnly: true, secure: true, sameSite: "none" })
     .json({
       success: true,
       message: "Access token refreshed",
@@ -493,7 +493,7 @@ export const getCurrentUser = asyncErrorHandler(async (req, res) => {
 export const updateUser = asyncErrorHandler(async (req, res) => {
   console.log("UPDATE USER CALLED:", req.body, req.file);
   const { fullname, username, email } = req.body;
-  
+
   const updateFields = {
     fullname,
     username,
@@ -520,10 +520,10 @@ export const updateUser = asyncErrorHandler(async (req, res) => {
     success: true,
     data: user
   });
-}); 
+});
 
 
-export const loggedOutUser = asyncErrorHandler (async (req, res) => {
+export const loggedOutUser = asyncErrorHandler(async (req, res) => {
 
   const user = await User.findByIdAndUpdate(
     req.user._id,
@@ -537,8 +537,8 @@ export const loggedOutUser = asyncErrorHandler (async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: true,        
-    sameSite: "strict"  
+    secure: true,
+    sameSite: "none"
   };
 
   return res
@@ -546,5 +546,5 @@ export const loggedOutUser = asyncErrorHandler (async (req, res) => {
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
     .json(new apiResponse(200, {}, `${req.user.fullname}, logged out successfully`));
-   
+
 });
