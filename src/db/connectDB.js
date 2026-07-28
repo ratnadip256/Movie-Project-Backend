@@ -25,6 +25,6 @@ const ConnectDB = async () => {
         console.error("MongoDB Connection Error:", error);
         throw error;
     }
-};
+}
 
 export default ConnectDB;
