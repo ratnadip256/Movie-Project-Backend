@@ -12,13 +12,22 @@ const allowedOrigins = [
   'http://localhost:5175'
 ];
 
+// Regex to allow ALL Vercel preview deployment URLs from this account.
+// Preview URLs follow the pattern: https://movie-project-frontend-<hash>-ratnadip-shits-projects.vercel.app
+const vercelPreviewRegex = /^https:\/\/movie-project-frontend-[a-z0-9]+-ratnadip-shits-projects\.vercel\.app$/;
+
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    // Allow requests with no origin (e.g., mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+
+    // Allow if it's in the explicit allowlist (production URL, localhost)
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    // Allow if it matches any Vercel preview URL from this project
+    if (vercelPreviewRegex.test(origin)) return callback(null, true);
+
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
 }));
