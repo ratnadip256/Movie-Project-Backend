@@ -46,6 +46,15 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    forgotPasswordVerified: {
+      type: Boolean,
+      default: false,
+    },
+    forgotPasswordExpiry: {
+      type: Date,
+      default: null,
+    },
+
     otpAttempts: {
       type: Number,
       default: 0,

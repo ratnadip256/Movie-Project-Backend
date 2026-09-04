@@ -5,7 +5,8 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { emailSend } from "../sendEmail/sendEmail.js";
 import jwt, { decode } from "jsonwebtoken";
 import { apiResponse } from "../utils/apiResponse.js";
-import { forgotPasswordMail } from "../sendEmail/forgotPasswordMail.js"
+import { forgotPasswordMail } from "../sendEmail/forgotPasswordMail.js";
+import fs from "fs";
 
 
 
@@ -70,6 +71,15 @@ export const registerUser = asyncErrorHandler(async (req, res) => {
   const avatarLocalPath = req.file?.path;
   if (!avatarLocalPath) {
     throw new apiError(400, "Avatar is required");
+  }
+  
+  // Minimum 300KB constraint check
+  const minSizeBytes = 300 * 1024; // 300KB in bytes
+  if (req.file.size < minSizeBytes) {
+    if (fs.existsSync(avatarLocalPath)) {
+      fs.unlinkSync(avatarLocalPath);
+    }
+    throw new apiError(400, "Avatar image size must be at least 300 KB");
   }
   // console.log("Avatar path:", avatarLocalPath);
 
@@ -280,8 +290,8 @@ export const forgotPassword = asyncErrorHandler(async (req, res) => {
   }
 
   const conditions = [];
-  if (username) conditions.push({ username });
-  if (email) conditions.push({ email });
+  if (username) conditions.push({ username: username.trim().toLowerCase() });
+  if (email) conditions.push({ email: email.trim().toLowerCase() });
 
   const user = await User.findOne({ $or: conditions });
 
@@ -338,7 +348,8 @@ export const verifyForgotPasswordOtp = asyncErrorHandler(async (req, res) => {
     throw new apiError(400, "Email and OTP are required");
   }
 
-  const user = await User.findOne({ email });
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail });
 
   if (!user) {
     throw new apiError(404, "User not found");
@@ -387,7 +398,8 @@ export const verifyForgotPasswordOtp = asyncErrorHandler(async (req, res) => {
   user.otpExpiry = null;
   user.otpAttempts = 0;
   user.otpBlockedUntil = null;
-  user.verifiedAt = new Date();
+  user.forgotPasswordVerified = true;
+  user.forgotPasswordExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins window
 
   await user.save({ validateBeforeSave: false });
 
@@ -402,8 +414,8 @@ export const changePassword = asyncErrorHandler(async (req, res) => {
   const { email, username, newPassword, confirmPassword } = req.body;
 
   // validations
-  if (!email) {
-    throw new apiError(400, "Email is required");
+  if (!email && !username) {
+    throw new apiError(400, "Email or Username is required");
   }
 
   if (!newPassword || !confirmPassword) {
@@ -413,7 +425,7 @@ export const changePassword = asyncErrorHandler(async (req, res) => {
   if (!passwordRegex.test(newPassword)) {
     throw new apiError(
       400,
-      "Password must be at least 8 characters long and include letters and numbers"
+      "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character"
     );
   }
 
@@ -421,25 +433,27 @@ export const changePassword = asyncErrorHandler(async (req, res) => {
     throw new apiError(400, "Passwords do not match");
   }
 
-  // find user (OTP must be verified
+  // find user (OTP must be verified and reset window active)
   const conditions = [];
-  if (username) conditions.push({ username });
-  if (email) conditions.push({ email });
+  if (username) conditions.push({ username: username.trim().toLowerCase() });
+  if (email) conditions.push({ email: email.trim().toLowerCase() });
 
   const user = await User.findOne({
     $or: conditions,
-    verifiedAt: { $ne: null },
+    forgotPasswordVerified: true,
+    forgotPasswordExpiry: { $gt: new Date() },
   });
 
   if (!user) {
-    throw new apiError(400, "OTP not verified or user not found");
+    throw new apiError(400, "OTP verification expired or invalid password reset session. Please request a new OTP.");
   }
 
   // update password
   user.password = newPassword;
 
   // cleanup
-  user.verifiedAt = null;
+  user.forgotPasswordVerified = false;
+  user.forgotPasswordExpiry = null;
   user.otp = null;
   user.otpExpiry = null;
   user.otpAttempts = 0;
