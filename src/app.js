@@ -5,40 +5,15 @@ import userRouter from "./routes/user.route.js";
 
 const app = express();
 
-// ─────────────────────────────────────────────
-// CORS Configuration
-// ─────────────────────────────────────────────
 
-// Explicit list: production URL + local dev ports
-const allowedOrigins = [
-  process.env.CORS_ORIGIN,
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://localhost:5175",
-];
 
-// Allows all Vercel preview deployments from this account
-// Preview URL pattern: https://movie-project-frontend-<hash>-ratnadip-shits-projects.vercel.app
 const vercelPreviewRegex =
   /^https:\/\/movie-project-frontend-[a-z0-9]+-ratnadip-shits-projects\.vercel\.app$/;
 
-const isAllowedOrigin = (origin) => {
-  if (!origin) return true; // Allow non-browser requests (Postman, curl, etc.)
-  if (allowedOrigins.includes(origin)) return true; // Allow production & localhost
-  if (vercelPreviewRegex.test(origin)) return true; // Allow Vercel preview URLs
-  return false;
-};
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (isAllowedOrigin(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
+    origin: [ "http://localhost:5173","https://movie-project-frontend-three.vercel.app"]
   })
 );
 
@@ -51,9 +26,6 @@ app.use(express.urlencoded({ extended: true, limit: "15kb" }));
 app.use(express.static("public"));
 app.use(cookieParser());
 
-// ─────────────────────────────────────────────
-// Health Check Route
-// ─────────────────────────────────────────────
 
 app.get("/", (req, res) => {
   res.status(200).json({
@@ -62,9 +34,6 @@ app.get("/", (req, res) => {
   });
 });
 
-// ─────────────────────────────────────────────
-// API Routes
-// ─────────────────────────────────────────────
 
 app.use("/api/v1/users", userRouter);
 
@@ -83,4 +52,4 @@ app.use((err, req, res, next) => {
   });
 });
 
-export default app;
+export default app;
