@@ -8,7 +8,7 @@ const app = express();
 
 
 const vercelPreviewRegex =
-  /^https:\/\/movie-project-frontend-[a-z0-9]+-ratnadip-shits-projects\.vercel\.app$/;
+  /^https:\/\/movie-project-frontend-[a-z0-9-]+-ratnadip-shits-projects\.vercel\.app$/;
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -19,16 +19,26 @@ const allowedOrigins = [
   "https://movie-project-frontend-three.vercel.app",
 ];
 
+if (process.env.CORS_ORIGIN) {
+  allowedOrigins.push(process.env.CORS_ORIGIN);
+}
+
 app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1 || vercelPreviewRegex.test(origin)) {
+      if (
+        allowedOrigins.indexOf(origin) !== -1 ||
+        vercelPreviewRegex.test(origin) ||
+        origin.endsWith(".vercel.app")
+      ) {
         return callback(null, true);
       }
       return callback(null, true);
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-refresh-token", "Accept"],
   })
 );
 

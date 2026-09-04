@@ -269,6 +269,8 @@ export const verifyOtp = asyncErrorHandler(async (req, res) => {
   const { accessToken, refreshToken } =
     await generateAccessAndRefreshTokens(user._id);
 
+  const createdUser = await User.findById(user._id).select("-password -refreshToken");
+
   return res
     .status(200)
     .cookie("accessToken", accessToken, { httpOnly: true, secure: true, sameSite: "none" })
@@ -276,6 +278,11 @@ export const verifyOtp = asyncErrorHandler(async (req, res) => {
     .json({
       success: true,
       message: `${user.fullname}, you are successfully LoggedIn!`,
+      data: {
+        user: createdUser,
+        accessToken,
+        refreshToken,
+      },
     });
 
 
@@ -469,7 +476,10 @@ export const changePassword = asyncErrorHandler(async (req, res) => {
 
 
 export const refreshAccessToken = asyncErrorHandler(async (req, res) => {
-  const incomingRefreshToken = req.cookies.refreshToken;
+  const incomingRefreshToken =
+    req.cookies?.refreshToken ||
+    req.body?.refreshToken ||
+    req.headers["x-refresh-token"];
 
   if (!incomingRefreshToken) {
     throw new apiError(401, "Unauthorized request");
@@ -493,6 +503,10 @@ export const refreshAccessToken = asyncErrorHandler(async (req, res) => {
     .json({
       success: true,
       message: "Access token refreshed",
+      data: {
+        accessToken,
+        refreshToken,
+      },
     });
 });
 

@@ -5,7 +5,12 @@ import { asyncErrorHandler } from "../utils/asyncErrorHandler.js";
 
 export const verifyUser = asyncErrorHandler(async (req, res, next) => {
 
-  const token = req.cookies?.accessToken;
+  const authHeader = req.headers.authorization || req.header("Authorization");
+  const token =
+    req.cookies?.accessToken ||
+    (authHeader && authHeader.startsWith("Bearer ")
+      ? authHeader.replace("Bearer ", "").trim()
+      : null);
 
   if (!token) {
     throw new apiError(401, "Access token missing");
